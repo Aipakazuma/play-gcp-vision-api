@@ -10,6 +10,8 @@ import time
 import cv2
 
 
+FONT_PATH = '/Library/Fonts/ヒラギノ丸ゴ ProN W4.ttc'
+
 def request_api(img):
     content = base64.b64encode(img).decode('utf8')
     url = '%s?key=%s' % (config['api']['url'], config['api']['key'])
@@ -47,8 +49,9 @@ def response_parser(res):
 
 
 def draw(img, detect_list):
-    c_img = Image.open(io.BytesIO(img))
+    c_img = copy.deepcopy(img)
     draw_img = ImageDraw.Draw(c_img)
+    r = 0.5
     for detect in detect_list:
         lt = detect[1][0]
         rb = detect[1][2]
@@ -56,18 +59,21 @@ def draw(img, detect_list):
         y_conditions = 'y' in rb and 'y' in rb
         if not(x_conditions and y_conditions): continue
 
-        lt_point = lt['x'], lt['y']
-        rb_point = rb['x'], rb['y']
-        draw_img.rectangle((lt_point, rb_point), outline=(150, 0, 0), fill=(150, 0, 0))
+        start_point = lt['x'], lt['y']
+        end_point = rb['x'], rb['y']
+        draw_img.rectangle((start_point, end_point), outline=(150, 0, 0), fill=(150, 0, 0))
+
+        # テキスト描画
+        text_size = (end_point[1] - start_point[1]) * r
+        font = ImageFont.truetype(FONT_PATH, int(text_size))
+        draw_img.text((start_point[0] + 5, start_point[1] + 5), detect[0], font=font, fill=(0, 0, 0))
 
     c_img.save('./assets/%s.jpg' % (time.time()))
     c_img.show()
 
 
 def preprocessing(img):
-    pil_img = Image.open(io.BytesIO(img))
-    print(len(pil_img.tobytes()))
-    img_np = np.asarray(pil_img)
+    img_np = np.asarray(img)
     gray_img = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
     
     kernel = np.ones([5, 5], np.uint8)
@@ -78,23 +84,34 @@ def preprocessing(img):
     return {'dilate': dilate, 'sub': sub}
 
 
+def image_preprocessing(img):
+    """ RGBでなければ変換する. """
+    pil_img = Image.open(io.BytesIO(img))
+    size = pil_img.size
+    r = 0.4
+    resize = (int(size[0] * r), int(size[1] * r))
+    pil_img = pil_img.resize(resize)
+    if pil_img.mode == 'RGB':
+        return pil_img
+    else:
+        return pil_img.convert('RGB')
+
+
 def main():
     img_path = './assets/1.jpg'
 
     img = None
     with open(img_path, 'rb') as f:
-        img = f.read()
+        img = image_preprocessing(f.read())
 
-    print(len(img))
     img_dict = preprocessing(img)
     buffer = io.BytesIO()
     Image.fromarray(img_dict['sub']).save(buffer, 'jpeg')
     request_img = buffer.getvalue()
-    print(len(request_img))
 
-    # res = request_api(request_img)
-    # detect_list = response_parser(res)
-    # draw(img, detect_list)
+    res = request_api(request_img)
+    detect_list = response_parser(res)
+    draw(img, detect_list)
 
 
 if __name__ == '__main__':
