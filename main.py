@@ -23,7 +23,7 @@ def request_api(img):
             },
             'features': [{
                 'type': 'TEXT_DETECTION',
-                'maxResults': 10
+                'maxResults': 200
             }]
         }]
     })
@@ -81,7 +81,7 @@ def preprocessing(img):
 
     sub = 255 - (dilate - gray_img)
 
-    return {'dilate': dilate, 'sub': sub}
+    return {'gray': gray_img, 'dilate': dilate, 'sub': sub}
 
 
 def image_preprocessing(img):
@@ -106,7 +106,7 @@ def main():
 
     img_dict = preprocessing(img)
     buffer = io.BytesIO()
-    Image.fromarray(img_dict['sub']).save(buffer, 'jpeg')
+    Image.fromarray(img_dict['gray']).save(buffer, 'jpeg')
     request_img = buffer.getvalue()
 
     res = request_api(request_img)
