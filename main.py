@@ -8,6 +8,7 @@ import copy
 import io
 import time
 import cv2
+import argparse
 
 
 FONT_PATH = '/Library/Fonts/ヒラギノ丸ゴ ProN W4.ttc'
@@ -15,7 +16,6 @@ FONT_PATH = '/Library/Fonts/ヒラギノ丸ゴ ProN W4.ttc'
 def request_api(img):
     content = base64.b64encode(img).decode('utf8')
     url = '%s?key=%s' % (config['api']['url'], config['api']['key'])
-    print(url)
     res = json.dumps({
         'requests': [{
             'image': {
@@ -65,6 +65,7 @@ def draw(img, detect_list):
 
         # テキスト描画
         text_size = (end_point[1] - start_point[1]) * r
+        print(text_size)
         font = ImageFont.truetype(FONT_PATH, int(text_size))
         draw_img.text((start_point[0] + 5, start_point[1] + 5), detect[0], font=font, fill=(0, 0, 0))
 
@@ -98,7 +99,10 @@ def image_preprocessing(img):
 
 
 def main():
-    img_path = './assets/1.jpg'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--img_path', type=str, required=True)
+    args = parser.parse_args()
+    img_path = args.img_path
 
     img = None
     with open(img_path, 'rb') as f:
