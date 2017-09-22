@@ -64,8 +64,7 @@ def draw(img, detect_list):
         draw_img.rectangle((start_point, end_point), outline=(150, 0, 0), fill=(150, 0, 0))
 
         # テキスト描画
-        text_size = (end_point[1] - start_point[1]) * r
-        print(text_size)
+        text_size = abs(end_point[1] - start_point[1]) * r
         font = ImageFont.truetype(FONT_PATH, int(text_size))
         draw_img.text((start_point[0] + 5, start_point[1] + 5), detect[0], font=font, fill=(0, 0, 0))
 
